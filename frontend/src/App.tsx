@@ -1,122 +1,162 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from "react";
+import { useWebSocket } from "./hooks/useWebSocket";
+import { MessageList } from "./components/MessageList";
+import { ChatInput } from "./components/ChatInput";
+import { RoomBar } from "./components/RoomBar";
 
-function App() {
-  const [count, setCount] = useState(0)
+const DEFAULT_ROOM = "general";
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function capitalize(str: string): string {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export default App
+export default function App() {
+  const [username, setUsername] = useState("");
+  const [joined, setJoined] = useState(false);
+  const [inputName, setInputName] = useState("");
+
+  const { messages, sendMessage, isConnected, onlineCount } = useWebSocket(
+    DEFAULT_ROOM,
+    username
+  );
+
+  const handleJoin = () => {
+    if (inputName.trim() === "") return;
+    setUsername(inputName.trim());
+    setJoined(true);
+  };
+
+  // Join screen
+  if (!joined) {
+    return (
+      <div style={{
+        height: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--color-background-tertiary)",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      }}>
+        {/* ✅ Animated border keyframes injected here */}
+        <style>{`
+          @keyframes borderLoop {
+            0%   { border-color: #8B5CF6; }
+            25%  { border-color: #EC4899; }
+            50%  { border-color: #3B82F6; }
+            75%  { border-color: #10B981; }
+            100% { border-color: #8B5CF6; }
+          }
+          .echo-card {
+            animation: borderLoop 3s linear infinite;
+            border: 2px solid #8B5CF6;
+          }
+        `}</style>
+
+        {/* ✅ className added, border removed from inline styles */}
+        <div className="echo-card" style={{
+          background: "var(--color-background-primary)",
+          borderRadius: "20px",
+          padding: "40px",
+          width: "340px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "20px",
+          boxShadow: "0 4px 24px rgba(0, 0, 0, 0.08)",
+        }}>
+          {/* Logo */}
+          <div>
+            <h1 style={{
+              fontSize: "26px",
+              fontWeight: 500,
+              color: "var(--color-text-primary)",
+              margin: 0,
+              letterSpacing: "-0.5px",
+            }}>
+              Echo<span style={{ color: "#8B5CF6" }}>Grid</span>
+            </h1>
+            <p style={{
+              fontSize: "13px",
+              color: "var(--color-text-secondary)",
+              margin: "6px 0 0",
+            }}>
+              Real-time messaging. No friction.
+            </p>
+          </div>
+
+          {/* Input */}
+          <input
+            type="text"
+            placeholder="Choose a username"
+            value={inputName}
+            onChange={(e) => setInputName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleJoin();
+            }}
+            style={{
+              padding: "12px 16px",
+              borderRadius: "99px",
+              border: "1.5px solid #e2e8f0",
+              background: "var(--color-background-secondary)",
+              color: "var(--color-text-primary)",
+              fontSize: "14px",
+              outline: "none",
+            }}
+          />
+
+          {/* Join button */}
+          <button
+            onClick={handleJoin}
+            style={{
+              padding: "12px",
+              borderRadius: "99px",
+              border: "none",
+              background: "linear-gradient(135deg, #8B5CF6, #EC4899)",
+              color: "#ffffff",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            Join EchoGrid
+          </button>
+
+          <p style={{
+            fontSize: "12px",
+            color: "var(--color-text-tertiary)",
+            textAlign: "center",
+            margin: 0,
+          }}>
+            You'll join the #{DEFAULT_ROOM} room
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Main chat
+  return (
+    <div style={{
+      height: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      background: "var(--color-background-tertiary)",
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    }}>
+      <RoomBar
+        room={DEFAULT_ROOM}
+        username={capitalize(username)}
+        isConnected={isConnected}
+        onlineCount={onlineCount}
+      />
+      <MessageList
+        messages={messages}
+        currentUser={username}
+      />
+      <ChatInput
+        onSend={sendMessage}
+        isConnected={isConnected}
+      />
+    </div>
+  );
+}
