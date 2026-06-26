@@ -1,3 +1,4 @@
+import { IconMoodSmile, IconPaperclip, IconSend } from "@tabler/icons-react";
 import { useState, type KeyboardEvent } from "react";
 
 interface Props {
@@ -31,6 +32,7 @@ export function ChatInput({ onSend, isConnected }: Props) {
       background: "var(--color-background-primary)",
       flexShrink: 0,
     }}>
+
       {/* Emoji button */}
       <button
         aria-label="Emoji"
@@ -43,7 +45,7 @@ export function ChatInput({ onSend, isConnected }: Props) {
           color: "var(--color-text-secondary)",
         }}
       >
-        <i className="ti ti-mood-smile" style={{ fontSize: "20px" }} aria-hidden="true" />
+        <IconMoodSmile size={20} />
       </button>
 
       {/* Input */}
@@ -80,7 +82,7 @@ export function ChatInput({ onSend, isConnected }: Props) {
           color: "var(--color-text-secondary)",
         }}
       >
-        <i className="ti ti-paperclip" style={{ fontSize: "20px" }} aria-hidden="true" />
+        <IconPaperclip size={20} />
       </button>
 
       {/* Send button */}
@@ -101,16 +103,16 @@ export function ChatInput({ onSend, isConnected }: Props) {
           transition: "background 0.15s",
         }}
       >
-        <i className="ti ti-send"
+        <IconSend
+          size={17}
           style={{
-            fontSize: "17px",
             color: isConnected && value.trim() !== ""
               ? "#ffffff"
               : "var(--color-text-tertiary)",
           }}
-          aria-hidden="true"
         />
       </button>
+
     </div>
   );
 }

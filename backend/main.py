@@ -2,9 +2,23 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from manager import ConnectionManager
 from models import Message, JoinRequest
+from database import SessionLocal
+from db_models import Message, User
+from models import Message as EchoMessage
+from database import engine
+from db_models import Base
+from routers.auth_router import router as auth_router
+from routers.messages_router import router as messages_router
+
 import json
 
+# Create tables
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
+app.include_router(auth_router)
+app.include_router(messages_router)
+# ... rest of file unchanged
 
 # Allow the React frontend to connect
 app.add_middleware(
@@ -40,12 +54,31 @@ async def websocket_endpoint(
     room: str,
     username: str
 ):
-    # Step 1 — connect and announce
     await manager.connect(websocket, room, username)
+
+    # Load and send message history to the newly joined user
+    db = SessionLocal()
+    try:
+        history = (
+            db.query(Message)
+            .filter(Message.room == room)
+            .order_by(Message.created_at.asc())
+            .limit(50)
+            .all()
+        )
+        for msg in history:
+            await websocket.send_json({
+                "type": "chat",
+                "content": msg.content,
+                "sender": msg.sender.username,
+                "room": msg.room,
+                "timestamp": msg.created_at.strftime("%H:%M"),
+            })
+    finally:
+        db.close()
 
     try:
         while True:
-            # Step 2 — wait for incoming message
             raw = await websocket.receive_text()
 
             try:
@@ -60,15 +93,34 @@ async def websocket_endpoint(
                 })
                 continue
 
-            # Step 3 — build and validate the message
-            message = Message(
+            # Build message
+            message = EchoMessage(
                 type="chat",
                 content=data.get("content", ""),
                 sender=username,
                 room=room,
             )
 
-            # Step 4 — broadcast to everyone in the room
+            # Save to database
+            db = SessionLocal()
+            try:
+                user = db.query(User).filter(
+                    User.username == username
+                ).first()
+
+                if user:
+                    db_message = Message(
+                        content=message.content,
+                        room=room,
+                        type="chat",
+                        sender_id=user.id,
+                    )
+                    db.add(db_message)
+                    db.commit()
+            finally:
+                db.close()
+
+            # Broadcast to room
             await manager.broadcast(
                 room=room,
                 message=message.with_timestamp(),
@@ -76,5 +128,4 @@ async def websocket_endpoint(
             )
 
     except WebSocketDisconnect:
-        # Step 5 — clean up on disconnect
         await manager.disconnect(websocket, room, username)

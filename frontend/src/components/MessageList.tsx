@@ -1,3 +1,4 @@
+import { IconChecks } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
 import type { EchoMessage } from "../hooks/useWebSocket";
 
@@ -118,7 +119,7 @@ export function MessageList({ messages, currentUser }: Props) {
                 background: isOwn
                   ? "linear-gradient(135deg, #8B5CF6, #EC4899)"
                   : "var(--color-background-primary)",
-                  border: isOwn ? "none" : "1.5px solid var(--color-border-secondary)",
+                border: isOwn ? "none" : "1.5px solid var(--color-border-secondary)",
                 color: isOwn ? "#ffffff" : "var(--color-text-primary)",
                 fontSize: "13px",
                 lineHeight: "1.5",
@@ -140,10 +141,7 @@ export function MessageList({ messages, currentUser }: Props) {
                 {msg.timestamp}
               </span>
               {isOwn && (
-                <i className="ti ti-checks"
-                  style={{ fontSize: "11px", color: "#8B5CF6" }}
-                  aria-hidden="true"
-                />
+                <IconChecks size={12} style={{ color: "#8B5CF6" }} />
               )}
             </div>
           </div>

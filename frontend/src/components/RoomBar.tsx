@@ -1,8 +1,12 @@
+// ADD this import at the very top of RoomBar.tsx
+import { IconPhone, IconVideo, IconLogout } from "@tabler/icons-react";
+
 interface Props {
   room: string;
   username: string;
   isConnected: boolean;
   onlineCount: number;
+  onLogout: () => void;
 }
 
 function getAvatarColor(name: string): { bg: string; color: string } {
@@ -17,7 +21,14 @@ function getAvatarColor(name: string): { bg: string; color: string } {
   return colors[index];
 }
 
-export function RoomBar({ room, username, isConnected, onlineCount }: Props) {
+export function RoomBar({
+  room,
+  username,
+  isConnected,
+  onlineCount,
+  onLogout,
+}: Props) {
+
   const avatar = getAvatarColor(username);
   const initials = username.slice(0, 2).toUpperCase();
 
@@ -78,10 +89,21 @@ export function RoomBar({ room, username, isConnected, onlineCount }: Props) {
       </div>
 
       {/* Action icons */}
-      <div style={{ display: "flex", gap: "16px", color: "var(--color-text-secondary)" }}>
-        <i className="ti ti-phone" style={{ fontSize: "18px", cursor: "pointer" }} aria-hidden="true" />
-        <i className="ti ti-video" style={{ fontSize: "18px", cursor: "pointer" }} aria-hidden="true" />
-        <i className="ti ti-dots-vertical" style={{ fontSize: "18px", cursor: "pointer" }} aria-hidden="true" />
+      {/* Action icons */}
+      <div style={{
+        display: "flex",
+        gap: "16px",
+        color: "var(--color-text-secondary)",
+        alignItems: "center",
+      }}>
+        <IconPhone size={20} style={{ cursor: "pointer" }} />
+        <IconVideo size={20} style={{ cursor: "pointer" }} />
+        <IconLogout
+          size={20}
+          style={{ cursor: "pointer", color: "#EF4444" }}
+          onClick={onLogout}
+          aria-label="Logout"
+        />
       </div>
     </div>
   );

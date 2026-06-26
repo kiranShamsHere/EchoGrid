@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tabler/icons-react": "^3.44.0",
+    "axios": "^1.18.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "recharts": "^3.9.0"

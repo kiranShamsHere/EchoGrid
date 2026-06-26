@@ -1,3 +1,4 @@
+import { api } from "../api/auth";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 // The shape of every message coming from EchoGrid backend
@@ -38,12 +39,20 @@ export function useWebSocket(
       `ws://localhost:8000/ws/${room}/${username}`
     );
 
-    ws.onopen = () => {
+    ws.onopen = async () => {
       setIsConnected(true);
-      // Clear any pending reconnect timer
+
       if (reconnectTimer.current) {
         clearTimeout(reconnectTimer.current);
         reconnectTimer.current = null;
+      }
+
+      // Load message history
+      try {
+        const res = await api.get(`/messages/${room}`);
+        setMessages(res.data);
+      } catch (e) {
+        console.error("Failed to load history", e);
       }
     };
 
