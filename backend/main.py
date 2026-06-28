@@ -1,26 +1,19 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from manager import ConnectionManager
-from models import Message, JoinRequest
-from database import SessionLocal
-from db_models import Message, User
 from models import Message as EchoMessage
-from database import engine
-from db_models import Base
+from database import engine, SessionLocal
+from db_models import Base, Message, User, Conversation
 from routers.auth_router import router as auth_router
 from routers.messages_router import router as messages_router
-
+from routers.users_router import router as users_router
+from routers.users_router import set_manager
 import json
 
-# Create tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-app.include_router(auth_router)
-app.include_router(messages_router)
-# ... rest of file unchanged
 
-# Allow the React frontend to connect
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -29,7 +22,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
+app.include_router(messages_router)
+app.include_router(users_router)
+
 manager = ConnectionManager()
+set_manager(manager)
 
 
 @app.get("/")
@@ -49,14 +47,20 @@ async def get_rooms():
 
 
 @app.websocket("/ws/{room}/{username}")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    room: str,
-    username: str
-):
+async def websocket_endpoint(websocket: WebSocket, room: str, username: str):
     await manager.connect(websocket, room, username)
 
-    # Load and send message history to the newly joined user
+    # ✅ Send accurate room count to the joining user immediately
+    await websocket.send_json({
+        "type": "room_info",
+        "count": manager.get_room_count(room),
+        "room": room,
+        "sender": "EchoGrid",
+        "content": "",
+        "timestamp": "",
+    })
+
+    # ✅ Load and send message history to the newly joined user
     db = SessionLocal()
     try:
         history = (
@@ -117,10 +121,27 @@ async def websocket_endpoint(
                     )
                     db.add(db_message)
                     db.commit()
+
+                    # ✅ Create Conversation record for DM rooms
+                    if "_" in room and room != "general":
+                        parts = room.split("_")
+                        if len(parts) == 2:
+                            existing = db.query(Conversation).filter(
+                                Conversation.room_id == room
+                            ).first()
+                            if not existing:
+                                convo = Conversation(
+                                    room_id=room,
+                                    participant_one=parts[0],
+                                    participant_two=parts[1],
+                                )
+                                db.add(convo)
+                                db.commit()
+
             finally:
                 db.close()
 
-            # Broadcast to room
+            # ✅ Broadcast the chat message to everyone in the room
             await manager.broadcast(
                 room=room,
                 message=message.with_timestamp(),

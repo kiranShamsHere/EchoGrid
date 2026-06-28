@@ -60,7 +60,7 @@ export function MessageList({ messages, currentUser }: Props) {
               borderRadius: "99px",
               margin: "4px 0",
             }}>
-              {capitalize(msg.content)}
+              {msg.content || ""}
             </div>
           );
         }
@@ -119,7 +119,8 @@ export function MessageList({ messages, currentUser }: Props) {
                 background: isOwn
                   ? "linear-gradient(135deg, #8B5CF6, #EC4899)"
                   : "var(--color-background-primary)",
-                border: isOwn ? "none" : "1.5px solid var(--color-border-secondary)",
+                border: isOwn ? "none" : "1.5px solid #e2e8f0",
+                boxShadow: isOwn ? "none" : "0 1px 4px rgba(0,0,0,0.06)",
                 color: isOwn ? "#ffffff" : "var(--color-text-primary)",
                 fontSize: "13px",
                 lineHeight: "1.5",
